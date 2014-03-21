@@ -1,0 +1,14 @@
+Package: repomania
+Type: Package
+Title: Proof of concept test package
+Version: 0.0-1
+Depends:
+    raster  (>= 2.1-37),
+    R (>= 2.15)
+Date: 2014-03-21
+Author: Michael D. Sumner
+Maintainer: Michael D. Sumner <Michael.Sumner@aad.gov.au>
+Description: Placeholder
+LazyData: yes
+ByteCompile: yes
+License: GPL-3
