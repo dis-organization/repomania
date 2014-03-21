@@ -20,9 +20,9 @@ Generalize the read function, needs to handle
  - mulit-attributes per file / band
 
 Ensure \dots is always passed to brick() so we can use filename for easy out-of-memory handling
-- need to make each data source native to raster (or similar) so that stack() can take a list of file names, or no-cost version, currently available for NSIDC and OISST but not much else
+- need to make each data source native to raster (or similar) so that stack() can take a list of file names, or no-cost version, currently available for NSIDC and possibly OISST but not much else
 
-Method for xtract#function,data.frame has to work for no-time-dimension
+Method for extract#function,data.frame has to work for no-time-dimension
 
 
 
