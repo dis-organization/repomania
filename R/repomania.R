@@ -55,12 +55,25 @@ timedateFrom <- function(x, ...) {
 ##' @importFrom raster brick
 ##' @examples
 ##' x <- readice(catalog$date[c(10, 1, 2, 3)])
+##' \dontrun{
+##' ## try a different kind of file
+##'  baseurl <- "ftp://sidads.colorado.edu/pub/DATASETS/"
+##' f <- paste(baseurl, "nsidc0081_nrt_nasateam_seaice/north/nt_20130105_f17_nrt_n.bin", sep='')
+##' if (!file.exists(basename(f))) download.file(f, basename(f), mode = "wb")
+##' ice <- raster(basename(f))
+##' library(maptools)
+##' library(rgdal)
+##' data(wrld_simpl)
+##' cm <- spTransform(wrld_simpl, CRS(projection(ice)))
+##' plot(ice)
+##' plot(cm, add = TRUE)
+##' }
 readice <-
 function (date, time.resolution = c("daily"), product  ="nsidc",  xylim = NULL,
           setNA = TRUE, rescale = TRUE, debug = FALSE,
     verbose = TRUE, returnfiles = FALSE, ...)
 {
-
+    ## deal with options
     time.resolution <- match.arg(time.resolution)
     product <- match.arg(product)
     files <- .loadfiles()
@@ -68,52 +81,36 @@ function (date, time.resolution = c("daily"), product  ="nsidc",  xylim = NULL,
         return(files)
     if (missing(date))
         date <- min(files$date)
+    ## normalize date inputs
     date <- timedateFrom(date)
     findex <- .processDates(date, files$date, time.resolution)
-    stersouth <- "+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0"
-    dims <- switch(product, nsidc = c(316L, 332L), ssmi = c(632L,
-        664L))
-    res <- switch(product, nsidc = c(25000, 25000), ssmi = c(12500,
-        12500))
-    rtemplate <- raster(GridTopology(c(-3937500, -3937500), res,
-        dims))
-    cropit <- FALSE
+    ## this should be .processFiles . . .
+    files <- files[findex, ]
+    ## setup to crop if needed
+     cropit <- FALSE
     if (!is.null(xylim)) {
         cropit <- TRUE
         cropext <- extent(xylim)
     }
-    nfiles <- length(findex)
-    r <- vector("list", length(findex))
-    .readNSIDC <- function(fname) {
-        con <- file(fname, open = "rb")
-        trash <- readBin(con, "integer", size = 1, n = 300)
-        dat <- readBin(con, "integer", size = 1, n = prod(dims),
-            endian = "little", signed = FALSE)
-        close(con)
-        r100 <- dat > 250
-        r0 <- dat < 1
-        if (rescale) {
-            dat <- dat/2.5
-        }
-        if (setNA) {
-            dat[r100] <- NA
-            dat[r0] <- NA
-        }
-        raster(t(matrix(dat, dims[1])), template = rtemplate)
-    }
-    for (ifile in seq_along(findex)) {
-        r0 <- .readNSIDC(files$fullname[findex[ifile]])
-
+    ## work through the file list, stored in generic list()
+    ## (we won't get past the date-normalization above with less than 1 file)
+    nfiles <- nrow(files)
+    r <- vector("list", nfiles)
+     for (ifile in seq_len(nfiles)) {
+         r0 <- raster(files$fullname[ifile])
         if (cropit)
             r0 <- crop(r0, cropext)
         r[[ifile]] <- r0
     }
-    if (length(findex) > 1)
-        r <- brick(stack(r), ...)
+    ## build a stack, convert to brick, with arguments from the user for filename etc.
+    ## this should probably always be a RasterBrick
+    if (nfiles > 1)
+        r <- brick(stack(r, quick = TRUE), ...)
     else r <- r[[1L]]
-    projection(r) <- stersouth
-    names(r) <- files$file[findex]
-    r <- setZ(r, files$date[findex])
+    ## need to explore how raster() elements apply these names
+    names(r) <- basename(files$file)
+    ## also perhaps stack to capture all the getZ elements . . .
+    r <- setZ(r, files$date)
     r
 }
 
@@ -123,6 +120,8 @@ function (date, time.resolution = c("daily"), product  ="nsidc",  xylim = NULL,
     catalog$fullname <- file.path(datadir, catalog$file)
     catalog
 }
+
+
 ##' This is the catalog of files, hardcoded for a simple proof of concept
 ##'
 ##' @name catalog
