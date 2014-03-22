@@ -68,11 +68,9 @@ timedateFrom <- function(x, ...) {
 ##' plot(ice)
 ##' plot(cm, add = TRUE)
 ##' }
-readice <-
-function (date, time.resolution = c("daily"), product  ="nsidc",  xylim = NULL,
+readice <- function (date, time.resolution = c("daily"), product  ="nsidc",  xylim = NULL,
           setNA = TRUE, rescale = TRUE, debug = FALSE,
-    verbose = TRUE, returnfiles = FALSE, ...)
-{
+    verbose = TRUE, returnfiles = FALSE, ...) {
     ## deal with options
     time.resolution <- match.arg(time.resolution)
     product <- match.arg(product)
@@ -97,48 +95,47 @@ function (date, time.resolution = c("daily"), product  ="nsidc",  xylim = NULL,
     nfiles <- nrow(files)
     r <- vector("list", nfiles)
 
-
     ## first test for "filename.grd" and build the header/binary version instead
-
     l <- list(...)
     filename <- l[["filename"]]
-    if (!is.null(filename) & grepl("grd$", filename)) {
-        overwrite <- l[["overwrite"]]
-        rawcon <- file(filename, open = "wb")
+    if (!is.null(filename) && grepl("grd$", filename)) {
+  ##      overwrite <- l[["overwrite"]]
+        rawcon <- file(gsub("grd$", "gri", filename), open = "wb")
         on.exit({
             ## see R.utils::gunzip.default for outComplete test
             if (!is.null(rawcon)) close(rawcon)
         })
         ## loop files and write to raw binary connection
         for (i in seq_len(nfiles)) {
-            r0 <- raster(file[i])
+            r0 <- raster(files$fullname[i])
             writeBin(as.vector(values(r0)), rawcon)
         }
         close(rawcon)
-        if (is.null(overwrite)) overwrite <- FALSE
-        r <- brh(gsub("grd$", "gri", filename), reference_raster = r0,
-                                 out_nlayers = length(file), overwrite = overwrite)
+##        if (is.null(overwrite)) overwrite <- FALSE
+
+        r <- brh(filename, reference_raster = r0,
+                                 out_nlayers = nfiles)
     } else { ## else do the standard brick(stack(thing))
+        for (ifile in seq_len(nfiles)) {
+            r0 <- raster(files$fullname[ifile])
+         if (cropit)
+             r0 <- crop(r0, cropext)
+            r[[ifile]] <- r0
+        }
 
-     for (ifile in seq_len(nfiles)) {
-         r0 <- raster(files$fullname[ifile])
-        if (cropit)
-            r0 <- crop(r0, cropext)
-        r[[ifile]] <- r0
-    }
-     ## build a stack, convert to brick, with arguments from the user for filename etc.
-     ## this should probably always be a RasterBrick
-     ##  if (nfiles > 1)
+        ## build a stack, convert to brick, with arguments from the user for filename etc.
+        ## this should probably always be a RasterBrick
+        ##  if (nfiles > 1)
         r <- brick(stack(r, quick = TRUE), ...)
-     ##    else r <- r[[1L]]
-
- }
+        ##    else r <- r[[1L]]
+    }
      ## need to explore how raster() elements apply these names
     names(r) <- basename(files$file)
     ## also perhaps stack to capture all the getZ elements . . .
     r <- setZ(r, files$date)
     r
 }
+
 
 ## private copy of spatial.tools::build_raster_header
 brh <-
@@ -163,17 +160,30 @@ function (x_filename, reference_raster, out_nlayers, dataType = "FLT8S",
     else outraster@data@haveminmax <- FALSE
     try(outhdr <- hdr(outraster, format = format), silent = TRUE)
     if (out_nlayers == 1) {
-        outraster <- raster(paste(remove_file_extension(x_filename,
+        outraster <- raster(paste(rfe(x_filename,
             ".gri"), ".grd", sep = ""))
     }
     else {
-        outraster <- brick(paste(remove_file_extension(x_filename,
+        outraster <- brick(paste(rfe(x_filename,
             ".gri"), ".grd", sep = ""))
     }
     if (setMinMax)
         outraster <- setMinMax(outraster)
     else outraster@data@haveminmax <- FALSE
     return(outraster)
+}
+rfe <- function (filename, extension_delimiter = ".")
+{
+    split_filename = unlist(strsplit(filename, extension_delimiter,
+        fixed = TRUE))
+    split_filename_length = length(split_filename)
+    if (split_filename_length == 1) {
+        return(split_filename[1])
+    }
+    else {
+        return(paste(as.character(split_filename)[1:(split_filename_length -
+            1)], collapse = extension_delimiter))
+    }
 }
 
 .loadfiles <- function() {
