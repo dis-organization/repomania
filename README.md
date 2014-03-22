@@ -1,7 +1,13 @@
 repomania
 =========================================
-This is a placeholder for some future development. 
 
+*NOTE* This is a placeholder for some future development. 
+
+This package contains a stripped down version of an access system for a file repository of time-series gridded data. There is one basic read function, with a hardcoded "catalog" of files that are available. 
+
+This is only for use with the relevant files being available locally, this can be set with 
+
+options(default.datadir = "/path/to/data")
 
 TO INSTALL
 - git clone this repo
