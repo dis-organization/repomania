@@ -11,8 +11,14 @@ TO INSTALL
 - R CMD INSTALL repomania_[major.minor-iter].tar.gz
 - requires global option "default.datadir" to point to a sensible place
 
+QUESTIONS
+
+- Why does rgdal get loaded by `raster("nt_19781026_n07_v01_s.bin")` ?
+
+
 TODO
 
+Ensure overwrite argument is captured and dealt with correctly for gri/grd case. 
 Generalize the read function, needs to handle
  - different products, product options
  - single time per file

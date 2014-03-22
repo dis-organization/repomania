@@ -75,6 +75,7 @@ readice <- function (date, time.resolution = c("daily"), product  ="nsidc",  xyl
     time.resolution <- match.arg(time.resolution)
     product <- match.arg(product)
     files <- .loadfiles()
+
     if (returnfiles)
         return(files)
     if (missing(date))
@@ -96,11 +97,12 @@ readice <- function (date, time.resolution = c("daily"), product  ="nsidc",  xyl
     r <- vector("list", nfiles)
 
     ## first test for "filename.grd" and build the header/binary version instead
-    l <- list(...)
-    filename <- l[["filename"]]
-    if (!is.null(filename) && grepl("grd$", filename)) {
+    arglist <- list(...)
+    grdfile <- arglist[["filename"]]
+    if (!is.null(grdfile) && grepl("grd$", grdfile)) {
   ##      overwrite <- l[["overwrite"]]
-        rawcon <- file(gsub("grd$", "gri", filename), open = "wb")
+        grifile <- gsub("grd$", "gri", grdfile)
+        rawcon <- file(grifile, open = "wb")
         on.exit({
             ## see R.utils::gunzip.default for outComplete test
             if (!is.null(rawcon)) close(rawcon)
@@ -108,12 +110,11 @@ readice <- function (date, time.resolution = c("daily"), product  ="nsidc",  xyl
         ## loop files and write to raw binary connection
         for (i in seq_len(nfiles)) {
             r0 <- raster(files$fullname[i])
+            if (cropit) r0 <- crop(r0, cropext)
             writeBin(as.vector(values(r0)), rawcon)
         }
-        close(rawcon)
-##        if (is.null(overwrite)) overwrite <- FALSE
 
-        r <- brh(filename, reference_raster = r0,
+        r <- build_raster_header(grifile, reference_raster = r0,
                                  out_nlayers = nfiles)
     } else { ## else do the standard brick(stack(thing))
         for (ifile in seq_len(nfiles)) {
@@ -138,7 +139,7 @@ readice <- function (date, time.resolution = c("daily"), product  ="nsidc",  xyl
 
 
 ## private copy of spatial.tools::build_raster_header
-brh <-
+build_raster_header <-
 function (x_filename, reference_raster, out_nlayers, dataType = "FLT8S",
     format = "raster", bandorder = "BSQ", setMinMax = FALSE,
     verbose = FALSE)
@@ -160,11 +161,11 @@ function (x_filename, reference_raster, out_nlayers, dataType = "FLT8S",
     else outraster@data@haveminmax <- FALSE
     try(outhdr <- hdr(outraster, format = format), silent = TRUE)
     if (out_nlayers == 1) {
-        outraster <- raster(paste(rfe(x_filename,
+        outraster <- raster(paste(remove_file_extension(x_filename,
             ".gri"), ".grd", sep = ""))
     }
     else {
-        outraster <- brick(paste(rfe(x_filename,
+        outraster <- brick(paste(remove_file_extension(x_filename,
             ".gri"), ".grd", sep = ""))
     }
     if (setMinMax)
@@ -172,7 +173,8 @@ function (x_filename, reference_raster, out_nlayers, dataType = "FLT8S",
     else outraster@data@haveminmax <- FALSE
     return(outraster)
 }
-rfe <- function (filename, extension_delimiter = ".")
+
+remove_file_extension <- function (filename, extension_delimiter = ".")
 {
     split_filename = unlist(strsplit(filename, extension_delimiter,
         fixed = TRUE))
