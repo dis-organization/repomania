@@ -1,0 +1,61 @@
+
+R version 3.0.3 Patched (2014-03-06 r65151) -- "Warm Puppy"
+Copyright (C) 2014 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(repomania)
+Loading required package: raster
+Loading required package: sp
+> x <- readice()
+rgdal: version: 0.8-16, (SVN revision 498)
+Geospatial Data Abstraction Library extensions to R successfully loaded
+Loaded GDAL runtime: GDAL 1.10.1, released 2013/08/26
+Path to GDAL shared files: c:/inst/R/R/library/rgdal/gdal
+GDAL does not use iconv for recoding strings.
+Loaded PROJ.4 runtime: Rel. 4.8.0, 6 March 2012, [PJ_VERSION: 480]
+Path to PROJ.4 shared files: c:/inst/R/R/library/rgdal/proj
+> x
+class       : RasterBrick 
+dimensions  : 332, 316, 104912, 1  (nrow, ncol, ncell, nlayers)
+resolution  : 25000, 25000  (x, y)
+extent      : -3950000, 3950000, -3950000, 4350000  (xmin, xmax, ymin, ymax)
+coord. ref. : +proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0 
+data source : in memory
+names       : nt_20130903_f17_nrt_s.bin 
+min values  :                       0.4 
+max values  :                       100 
+time        : 2013-09-03 
+
+> ##x1 <- readice(catalog$date, filename = sprintf("%s.sdat", tempfile()))
+> 
+> y <- readice(catalog$date[c(1, 5, 10)])
+> 
+> y
+class       : RasterBrick 
+dimensions  : 332, 316, 104912, 3  (nrow, ncol, ncell, nlayers)
+resolution  : 25000, 25000  (x, y)
+extent      : -3950000, 3950000, -3950000, 4350000  (xmin, xmax, ymin, ymax)
+coord. ref. : +proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0 
+data source : in memory
+names       : nt_20130903_f17_nrt_s.bin, nt_20130907_f17_nrt_s.bin, nt_20130912_f17_nrt_s.bin 
+min values  :                       0.4,                       0.4,                       0.4 
+max values  :                       100,                       100,                       100 
+time        : 2013-09-03, 2013-09-07, 2013-09-12 
+
+> 
+> 
+> proc.time()
+   user  system elapsed 
+   4.53    0.12    4.71 
