@@ -19,9 +19,9 @@ TO INSTALL
 
 EXAMPLE
 
-options(default.datadir = "/path/to/gridded/data")
+`options(default.datadir = "/path/to/gridded/data")
 library(repomania)
-x <- readice(catalog$date[c(1, 3, 5)])
+x <- readice(catalog$date[c(1, 3, 5)])`
 
 TODO
 
