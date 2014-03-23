@@ -11,16 +11,17 @@ This is only for use with the relevant files being available locally, this can b
 
 TO INSTALL
 - git clone this repo
-- install package raster and dependencies sp
+- install package raster and dependencies sp (also rgdal, but this will be changed in future to Suggests)
 - in R generate the documentation with `library(roxygen2); roxygenize("repomania")`
 - R CMD build repomania
 - R CMD INSTALL repomania_[major.minor-patch].tar.gz
 - ensure global option "default.datadir" to point to a sensible place
 
-QUESTIONS
+EXAMPLE
 
-- Why does rgdal get loaded by `raster("nt_19781026_n07_v01_s.bin")` ?
-
+options(default.datadir = "/path/to/gridded/data")
+library(repomania)
+x <- readice(catalog$date[c(1, 3, 5)])
 
 TODO
 
@@ -29,7 +30,8 @@ Generalize the read function, needs to handle
  - different products, product options
  - single time per file
  - multi-time per file
- - mulit-attributes per file / band
+ - multi-attributes per file / band
+ - update raster#character cascade order to avoid rgdal load by `raster("nt_19781026_n07_v01_s.bin")`
 
 Ensure \dots is always passed to `brick()` so we can use filename for easy out-of-memory handling
 - need to make each data source native to raster (or similar) so that `stack()` can take a list of file names, or no-cost version, currently available for NSIDC and possibly OISST but not much else
