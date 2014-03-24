@@ -29,7 +29,9 @@ timedateFrom <- function(x, ...) {
   as.POSIXct(x, tz = "GMT", ...)
 }
 
-
+.removeTrailingSlashes <- function(x) {
+    gsub("\\\\$", "", gsub("/$", "", x))
+}
 
 ##' Read data from sea ice data products.
 ##'
@@ -151,10 +153,11 @@ readice <- function (date, time.resolution = c("daily"), product  ="nsidc",  xyl
 
     if (is.null(files)) {
         cf <- repo_config("C:\\Temp\\repo\\raad_repo_config.json")
+       datadir <- .removeTrailingSlashes(cf$global$local_file_root)
 	lfiles  <- vector("list", length(mydatasets))
         for (i in seq_along(mydatasets)) {
             ## please don't leave the trailing slash in the config
-            localdir <- gsub("/$", "", cf$datasets[match(mydatasets[i], cf$datasets$name), "local_directory"])
+            localdir <- .removeTrailingSlashes(cf$datasets[match(mydatasets[i], cf$datasets$name), "local_directory"])
             lfiles[[i]] <- list.files(file.path(datadir, localdir), pattern = "s.bin$", recursive = TRUE, full.names = TRUE)
         }
         lfiles <- unlist(lfiles)
@@ -165,7 +168,7 @@ readice <- function (date, time.resolution = c("daily"), product  ="nsidc",  xyl
 
         files <- files[order(files$date), ]
 	rcatalog[[myname]] <- files
-	options(repocatlog = rcatalog)
+	options(repocatalog = rcatalog)
     }
     files
 }
