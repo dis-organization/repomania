@@ -11,6 +11,10 @@
 NULL
 
 
+.onAttach <- function(libname, pkgname) {
+    options(repocatalog = list())
+}
+
 
 ##' Stable conversion to POSIXct from character and Date
 ##'
@@ -74,8 +78,8 @@ readice <- function (date, time.resolution = c("daily"), product  ="nsidc",  xyl
     ## deal with options
     time.resolution <- match.arg(time.resolution)
     product <- match.arg(product)
-    files <- .loadfiles()
-
+    ##files <- .loadfiles()
+    files <- .icefiles()
     if (returnfiles)
         return(files)
     if (missing(date))
@@ -137,6 +141,46 @@ readice <- function (date, time.resolution = c("daily"), product  ="nsidc",  xyl
     r
 }
 
+.icefiles <- function(myname = "nsidc_nasteam_daily") {
+    source("C:\\Users\\michae_sum\\Documents\\GIT\\syncrepo\\R\\sync_repo.R")
+    rcatalog <- getOption("repocatalog")
+    files <- rcatalog[[myname]]
+
+    mydatasets <- c("SMMR-SSM/I Nasateam daily sea ice concentration",
+                    "SMMR SSM/I Nasateam near-real-time sea ice concentration")
+
+    if (is.null(files)) {
+        cf <- repo_config("C:\\Temp\\repo\\raad_repo_config.json")
+	lfiles  <- vector("list", length(mydatasets))
+        for (i in seq_along(mydatasets)) {
+            ## please don't leave the trailing slash in the config
+            localdir <- gsub("/$", "", cf$datasets[match(mydatasets[i], cf$datasets$name), "local_directory"])
+            lfiles[[i]] <- list.files(file.path(datadir, localdir), pattern = "s.bin$", recursive = TRUE, full.names = TRUE)
+        }
+        lfiles <- unlist(lfiles)
+        files <- data.frame(file = file.path(localdir, basename(lfiles)),
+                            date = timedateFrom(strptime(basename(lfiles), "nt_%Y%m%d")),
+                            fullname = lfiles,
+                            stringsAsFactors = FALSE)
+
+        files <- files[order(files$date), ]
+	rcatalog[[myname]] <- files
+	options(repocatlog = rcatalog)
+    }
+    files
+}
+
+
+
+## leave this for now
+.loadfiles <- function() {
+
+
+    datadir <- getOption("default.datadir")
+    if (is.null(datadir)) datadir <- "E:/repo"
+    catalog$fullname <- file.path(datadir, catalog$file)
+    catalog
+}
 
 ## private copy of spatial.tools::build_raster_header
 build_raster_header <-
@@ -188,12 +232,7 @@ remove_file_extension <- function (filename, extension_delimiter = ".")
     }
 }
 
-.loadfiles <- function() {
-    datadir <- getOption("default.datadir")
-    if (is.null(datadir)) datadir <- "E:/repo"
-    catalog$fullname <- file.path(datadir, catalog$file)
-    catalog
-}
+
 
 
 ##' This is the catalog of files, hardcoded for a simple proof of concept
