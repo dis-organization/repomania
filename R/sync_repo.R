@@ -1,8 +1,3 @@
-require(assertthat)
-require(R.utils)
-require(RJSONIO) ## we use isValidJSON from here
-require(jsonlite) ## and fromJSON from here
-
 #' Load RAADtools data repository configuration file
 #'
 #' This configuration specifies global settings that control the synchronization behaviour in general, and provides details of each of the datasets in the repository. The config_file parameter is required. Any arguments provided to this function will override the corresponding setting in the configuration file.
@@ -35,15 +30,19 @@ require(jsonlite) ## and fromJSON from here
 #' @param ftp_proxy_user string: username/password for ftp proxy, in the form "username:password" (not yet implemented)
 #' @return a named list with components "global" and "datasets"
 #' @export
+#' @importFrom assertthat assert_that
+#' @importFrom jsonlite validate fromJSON
+#' @importFrom R.utils gunzip
 repo_config=function(config_file="raad_repo_config.json",local_file_root,skip_downloads,clobber,wait,wget_flags,http_proxy,http_proxy_user,ftp_proxy,ftp_proxy_user) {
     ## check that config file is valid JSON
-    if (!RJSONIO::isValidJSON(config_file)) {
+    txt <- readLines(config_file)
+    if (!validate(txt)) {
         stop("configuration file ",config_file," is not valid JSON")
     }
     ## read configuration file and override with anything provided directly here
-    cf=jsonlite::fromJSON(readLines(config_file))
+    cf = fromJSON(txt)
     if (!missing(local_file_root)) {
-        cf$global$local_file_root=local_file_root
+        cf$global$local_file_root = local_file_root
     }
     assert_that(is.string(cf$global$local_file_root)) ## just check that it's a string, not that it's a directory
     ## make sure that local_file_root path is in correct form for this system (but don't test its existence)

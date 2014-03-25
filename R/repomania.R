@@ -143,17 +143,19 @@ readice <- function (date, time.resolution = c("daily"), product  ="nsidc",  xyl
     r
 }
 
-.icefiles <- function(myname = "nsidc_nasteam_daily") {
-    source("C:\\Users\\michae_sum\\Documents\\GIT\\syncrepo\\R\\sync_repo.R")
+.icefiles <- function(myname = "nsidc_nasteam_daily", configfile) {
+
+    if (missing(configfile)) configfile <- system.file("inst", "raad_repo_config.json", package= "repomania")
     rcatalog <- getOption("repocatalog")
     files <- rcatalog[[myname]]
 
+    ## can we use "myname" to define multiple collections in the config?
     mydatasets <- c("SMMR-SSM/I Nasateam daily sea ice concentration",
                     "SMMR SSM/I Nasateam near-real-time sea ice concentration")
 
     if (is.null(files)) {
-        cf <- repo_config("C:\\Temp\\repo\\raad_repo_config.json")
-       datadir <- .removeTrailingSlashes(cf$global$local_file_root)
+        cf <- repo_config(configfile)
+        datadir <- .removeTrailingSlashes(cf$global$local_file_root)
 	lfiles  <- vector("list", length(mydatasets))
         for (i in seq_along(mydatasets)) {
             ## please don't leave the trailing slash in the config
