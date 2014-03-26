@@ -145,7 +145,7 @@ readice <- function (date, time.resolution = c("daily"), product  ="nsidc",  xyl
 
 .icefiles <- function(myname = "nsidc_nasteam_daily", configfile) {
 
-    if (missing(configfile)) configfile <- system.file("inst", "raad_repo_config.json", package= "repomania")
+    if (missing(configfile)) configfile <- system.file("extdata", "raad_repo_config.json", package= "repomania")
     rcatalog <- getOption("repocatalog")
     files <- rcatalog[[myname]]
 

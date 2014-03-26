@@ -30,7 +30,7 @@
 #' @param ftp_proxy_user string: username/password for ftp proxy, in the form "username:password" (not yet implemented)
 #' @return a named list with components "global" and "datasets"
 #' @export
-#' @importFrom assertthat assert_that
+### importFrom assertthat assert_that
 #' @importFrom jsonlite validate fromJSON
 #' @importFrom R.utils gunzip
 repo_config=function(config_file="raad_repo_config.json",local_file_root,skip_downloads,clobber,wait,wget_flags,http_proxy,http_proxy_user,ftp_proxy,ftp_proxy_user) {
@@ -44,41 +44,43 @@ repo_config=function(config_file="raad_repo_config.json",local_file_root,skip_do
     if (!missing(local_file_root)) {
         cf$global$local_file_root = local_file_root
     }
-    assert_that(is.string(cf$global$local_file_root)) ## just check that it's a string, not that it's a directory
+
+    ## these tests should check the length of the vector as well . .
+    stopifnot(is.character(cf$global$local_file_root)) ## just check that it's a string, not that it's a directory
     ## make sure that local_file_root path is in correct form for this system (but don't test its existence)
     cf$global$local_file_root=normalizePath(cf$global$local_file_root,mustWork=FALSE)
     if (!missing(wget_flags)) {
         cf$global$wget_flags=wget_flags
     }
-    assert_that(is.string(cf$global$wget_flags))
+    stopifnot(is.character(cf$global$wget_flags))
     if (!missing(http_proxy)) {
         cf$global$http_proxy=http_proxy
     }
-    assert_that(is.string(cf$global$http_proxy))
+    stopifnot(is.character(cf$global$http_proxy))
     if (!missing(http_proxy_user)) {
         cf$global$http_proxy_user=http_proxy_user
     }
-    assert_that(is.string(cf$global$http_proxy_user))
+    stopifnot(is.character(cf$global$http_proxy_user))
     if (!missing(ftp_proxy)) {
         cf$global$ftp_proxy=ftp_proxy
     }
-    assert_that(is.string(cf$global$ftp_proxy))
+    stopifnot(is.character(cf$global$ftp_proxy))
     if (!missing(ftp_proxy_user)) {
         cf$global$ftp_proxy_user=ftp_proxy_user
     }
-    assert_that(is.string(cf$global$ftp_proxy_user))
+    stopifnot(is.character(cf$global$ftp_proxy_user))
     if (!missing(skip_downloads)) {
         cf$global$skip_downloads=skip_downloads
     }
-    assert_that(is.flag(cf$global$skip_downloads))
+    stopifnot(is.logical(cf$global$skip_downloads) && length(cf$global$skip_downloads) == 1L)
     if (!missing(clobber)) {
         cf$global$clobber=clobber
     }
-    assert_that(cf$global$clobber %in% c(0,1,2))
+    stopifnot(cf$global$clobber %in% c(0,1,2))
     if (!missing(wait)) {
         cf$global$wait=wait
     }
-    assert_that(is.na(cf$global$wait) || cf$global$wait>=0)
+    stopifnot(is.na(cf$global$wait) || cf$global$wait>=0)
     ## make sure that we have all the expected fields populated with non-NULL
     check_fields=c("wget_flags","http_proxy","http_proxy_user","ftp_proxy","ftp_proxy_user","local_file_root")
     for (fi in check_fields) {
@@ -210,7 +212,7 @@ sync_ifremer_ssmi=function(config,dataset) {
     dir_list=get_file_list(config,dataset)$dirs
     dir_list=sort(dir_list,decreasing=TRUE) ## start from most recent year
     if (!is.null(dataset$sync_from_year) && !dataset$sync_from_year %in% c("NA",NA)) {
-        assert_that(is.count(as.numeric(dataset$sync_from_year)))
+        stopifnot(is.count(as.numeric(dataset$sync_from_year)))
         cat(sprintf("  only synchronizing data from year %s onwards\n",dataset$sync_from_year))
         dir_list=dir_list[as.numeric(dir_list)>=as.numeric(dataset$sync_from_year)]
     }
@@ -286,9 +288,9 @@ do_decompress_files=function(method,recursive=FALSE) {
         do_decompress_files("gunzip",recursive=recursive)
         return
     }
-    assert_that(is.string(method))
+    stopifnot(is.character(method))
     method=match.arg(method,c("unzip","unzip_nodelete","gunzip"))
-    assert_that(is.flag(recursive))
+    stopifnot(is.logical(recursive) && length(recursive == 1L))
     ## unzip() issues warnings in some cases when operations have errors, and sometimes issues actual errors
     warn=getOption("warn") ## save current setting
     options(warn=0) ## so that we can be sure that last.warning will be set
@@ -358,11 +360,11 @@ create_chdir=function(this_dir) {
 get_file_list=function(config,dataset,pattern,url) {
     ## retrieve file list from ftp server
     if (!missing(pattern)) {
-        assert_that(is.string(pattern))
+        stopifnot(is.character(pattern))
     }
     ## use dataset$source_url unless url has been provided
     if (!missing(url)) {
-        assert_that(is.string(url))
+        stopifnot(is.character(url))
     } else {
         url=dataset$source_url
     }
@@ -399,7 +401,7 @@ get_file_list=function(config,dataset,pattern,url) {
 
 build_wget_call=function(config,dataset,fileurl) {
     ## build wget system call given our config and dataset
-    assert_that(config$global$clobber %in% c(0,1,2))
+    stopifnot(config$global$clobber %in% c(0,1,2))
     wget_call="wget"
     ## TODO: also need to take care of proxy settings here
     ## set clobber flags
@@ -415,24 +417,24 @@ build_wget_call=function(config,dataset,fileurl) {
     if (!missing(fileurl)) {
         ## downloading single file
         ## don't use method_flags, since they are about recursiveness and such like
-        assert_that(is.string(fileurl))
+        stopifnot(is.character(fileurl))
         wget_call=paste(wget_call,fileurl,sep=" ")
     } else {
         if (nchar(dataset$method_flags)>0) {
-            assert_that(is.string(dataset$method_flags))
+            stopifnot(is.character(dataset$method_flags))
             wget_call=paste(wget_call,dataset$method_flags,sep=" ")
         }
         if (config$global$wait>0) {
             wget_call=paste(wget_call," --wait=",as.character(config$global$wait),sep="")
         }
-        assert_that(is.string(dataset$source_url))
+        stopifnot(is.character(dataset$source_url))
         wget_call=paste(wget_call,dataset$source_url,sep=" ")
     }
     wget_call
 }
 
 do_wget=function(wget_call,config) {
-    assert_that(is.string(wget_call))
+    stopifnot(is.character(wget_call))
     if (config$global$skip_downloads) {
         cat(sprintf(" skip_downloads is TRUE, not executing: %s\n",wget_call))
     } else {
