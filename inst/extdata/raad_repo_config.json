@@ -24,10 +24,10 @@
      "local_directory":"seaice/smmr_ssmi_nasateam/daily/",
      "source_url":"ftp://sidads.colorado.edu/pub/DATASETS/nsidc0051_gsfc_nasateam_seaice/final-gsfc/south/daily/",
      "_comment":"data arranged in yearly folders. No option yet to retrieve only a subset of years",
-     "do_sync":false,
+     "do_sync":true,
      "method":"wget",
      "method_flags":"-r -l 2 --cut-dirs=6 -nH",
-     "sync_from_year":2010,
+     "sync_from_year":2013
      "also_get":["ftp://sidads.colorado.edu/pub/DATASETS/seaice/polar-stereo/tools/pss25area_v3.dat","ftp://sidads.colorado.edu/pub/DATASETS/seaice/polar-stereo/tools/pss25area_v3.dat","ftp://sidads.colorado.edu/pub/DATASETS/seaice/polar-stereo/tools/pss25lons_v3.dat","ftp://sidads.colorado.edu/pub/DATASETS/seaice/polar-stereo/tools/gsfc_25s.msk"]
     },
     {"name":"SMMR SSM/I Nasateam near-real-time sea ice concentration",

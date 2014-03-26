@@ -11,8 +11,73 @@
 NULL
 
 
+
 .onAttach <- function(libname, pkgname) {
-    options(repocatalog = list())
+    ##options(repocatalog = list())
+
+    pathwasset <- .trysetpath()
+    if (!pathwasset) {
+        packageStartupMessage("\nWarning: could not find data repository\n\n",sep = "\n\n")
+##            paste(.possiblepaths()[["default.datadir"]], collapse = "\n"),
+        packageStartupMessage("Consider setting the option for your system\n")
+        packageStartupMessage("For example: options(default.datadir = \"",
+            gsub("\\\\", "/", normalizePath("/myrepository/data",
+                                            mustWork = FALSE)), "\")", "\n", sep = "")
+
+    }
+
+    configwasset <- .trysetconfig()
+    if (!configwasset) {
+        packageStartupMessage("\nWarning: could not find global config file")
+    }
+}
+
+
+.trysetconfig <- function() {
+
+    existing <- getOption("repo.config")
+    possibles <- system.file("extdata", "raad_repo_config.json", package= "repomania")
+    if (!is.null(existing)) {
+            possibles <- c(existing, possibles)
+        }
+    success <- FALSE
+    for (i in seq_along(possibles)) {
+        if (file.exists(possibles[i]) && validate(readLines(possibles[i]))) {
+            options(repo.config = possibles[i])
+            success <- TRUE
+            break
+        }
+    }
+    success
+}
+## internally we kept a list of paths, but for the public site we are expected to
+## put this in at install time, or some other mechanism such as in your .Rprofile
+## or perhaps an envvar, or just ask the user forcefully at runtime and then cache it
+.possiblepaths <-  function ()
+{
+    list(default.datadir = NULL)
+
+}
+
+## this cascades through the existing, and possibles - kept open in case
+## "possiblepaths" is a sensible mechanism
+.trysetpath <-  function ()
+{
+    possibles <- .possiblepaths()[["default.datadir"]]
+    success <- FALSE
+    existing <- getOption("default.datadir")
+    if (!is.null(existing)) {
+        possibles <- c(existing, possibles)
+    }
+    for (i in seq_along(possibles)) {
+        fi <- file.info(possibles[i])
+        if (!is.na(fi$isdir) & fi$isdir) {
+            options(default.datadir = possibles[i])
+            success <- TRUE
+            break
+        }
+    }
+    success
 }
 
 
@@ -143,35 +208,44 @@ readice <- function (date, time.resolution = c("daily"), product  ="nsidc",  xyl
     r
 }
 
-.icefiles <- function(myname = "nsidc_nasteam_daily", configfile) {
+.icefiles <- function(myname = "nsidc_nasteam_daily") {
 
-    if (missing(configfile)) configfile <- system.file("extdata", "raad_repo_config.json", package= "repomania")
-    rcatalog <- getOption("repocatalog")
-    files <- rcatalog[[myname]]
+    configfile <- getOption("repo.config")
+##    if (missing(configfile)) configfile <-
+        ##system.file("extdata", "raad_repo_config.json", package= "repomania")
+##    rcatalog <- getOption("repocatalog")
+##    files <- rcatalog[[myname]]
 
     ## can we use "myname" to define multiple collections in the config?
     mydatasets <- c("SMMR-SSM/I Nasateam daily sea ice concentration",
                     "SMMR SSM/I Nasateam near-real-time sea ice concentration")
 
-    if (is.null(files)) {
+  ##  if (is.null(files)) {
         cf <- repo_config(configfile)
-        datadir <- .removeTrailingSlashes(cf$global$local_file_root)
+        datadir <- getOption("default.datadir")  ## .removeTrailingSlashes(cf$global$local_file_root)
 	lfiles  <- vector("list", length(mydatasets))
+    ## please don't leave the trailing slash in the config
+
+    localdirs <- .removeTrailingSlashes(cf$datasets[match(mydatasets, cf$datasets$name), "local_directory"])
         for (i in seq_along(mydatasets)) {
-            ## please don't leave the trailing slash in the config
-            localdir <- .removeTrailingSlashes(cf$datasets[match(mydatasets[i], cf$datasets$name), "local_directory"])
-            lfiles[[i]] <- list.files(file.path(datadir, localdir), pattern = "s.bin$", recursive = TRUE, full.names = TRUE)
+
+            fullp <- file.path(datadir, localdirs[i])
+            if (file.exists(fullp)) lfiles[[i]] <- list.files(fullp, pattern = "s.bin$", recursive = TRUE, full.names = TRUE)
         }
         lfiles <- unlist(lfiles)
-        files <- data.frame(file = file.path(localdir, basename(lfiles)),
-                            date = timedateFrom(strptime(basename(lfiles), "nt_%Y%m%d")),
-                            fullname = lfiles,
-                            stringsAsFactors = FALSE)
-
-        files <- files[order(files$date), ]
-	rcatalog[[myname]] <- files
-	options(repocatalog = rcatalog)
+    if (length(lfiles) == 0L) {
+        print(file.path(datadir, localdirs))
+        stop("no files found")
     }
+    files <- data.frame(file = gsub(datadir, "", lfiles),
+                        date = timedateFrom(strptime(basename(lfiles), "nt_%Y%m%d")),
+                        fullname = lfiles,
+                        stringsAsFactors = FALSE)
+
+    files <- files[order(files$date), ]
+ ##   rcatalog[[myname]] <- files
+ ##   options(repocatalog = rcatalog)
+    ##   }
     files
 }
 
