@@ -20,3 +20,4 @@ auto/
 *.synctex.gz
 *.dvi
 .Rproj.user
+*#*#
