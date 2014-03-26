@@ -1,0 +1,13 @@
+This package contains synchronization tools for remote data repositories. 
+
+On Windows 
+ - the system RTools provides the command line needs for FTP
+ - installation requires getting GNU wget for Windows, see below
+
+Install wget on Windows
+
+http://gnuwin32.sourceforge.net/packages/wget.htm
+- we used "Complete package, except sources" 
+- this includes the Binaries, and the Dependencies
+- run the installer for Complete package  and put the location of wget\bin\ in your path
+
