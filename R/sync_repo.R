@@ -30,73 +30,92 @@
 #' @param ftp_proxy_user string: username/password for ftp proxy, in the form "username:password" (not yet implemented)
 #' @return a named list with components "global" and "datasets"
 #' @export
-### importFrom assertthat assert_that
+#' @ importFrom assertthat assert_that validate_that is.readable is.string is.flag is.scalar
 #' @importFrom jsonlite validate fromJSON
 #' @importFrom R.utils gunzip
-repo_config=function(config_file="raad_repo_config.json",local_file_root,skip_downloads,clobber,wait,wget_flags,http_proxy,http_proxy_user,ftp_proxy,ftp_proxy_user) {
+repo_config <- function(config_file = "raad_repo_config.json",
+                        local_file_root,
+                        skip_downloads,
+                        clobber,
+                        wait,
+                        wget_flags,
+                        http_proxy,
+                        http_proxy_user,
+                        ftp_proxy,
+                        ftp_proxy_user) {
     ## check that config file is valid JSON
+    assert_that(is.readable(config_file))
     txt <- readLines(config_file)
     if (!validate(txt)) {
-        stop("configuration file ",config_file," is not valid JSON")
+        stop("configuration file\n",config_file,"\n is not valid JSON")
     }
     ## read configuration file and override with anything provided directly here
-    cf = fromJSON(txt)
+    cf <- fromJSON(txt)
     if (!missing(local_file_root)) {
+        assertthat(is.string(local_file_root))
+        if (!isTRUE(validate_that(is.scalar(local_file_root)))) local_file_root <- local_file_root[1L]
         cf$global$local_file_root = local_file_root
     }
-
+     globalnames <- c("wget_flags",
+                     "http_proxy", "http_proxy_user",
+                     "ftp_proxy", "ftp_proxy_user",
+                     "local_file_root",
+                     "clobber",
+                     "skip_downloads",
+                     "wait")
     ## these tests should check the length of the vector as well . .
     stopifnot(is.character(cf$global$local_file_root)) ## just check that it's a string, not that it's a directory
     ## make sure that local_file_root path is in correct form for this system (but don't test its existence)
     cf$global$local_file_root=normalizePath(cf$global$local_file_root,mustWork=FALSE)
+    ## check mode, length
+    ## can be "" to replace other value
+    ## final check for NAs on entire result at end
+    ## other validation later
     if (!missing(wget_flags)) {
-        cf$global$wget_flags=wget_flags
+        assert_that(is.string(wget_flags))
+        if (!isTRUE(validate_that(is.scalar(wget_flags)))) wget_flags <- wget_flags[1L]
+        cf$global$wget_flags <- wget_flags
     }
-    stopifnot(is.character(cf$global$wget_flags))
     if (!missing(http_proxy)) {
-        cf$global$http_proxy=http_proxy
+        assert_that(is.string(http_proxy))
+        if (!isTRUE(validate_that(is.scalar(http_proxy)))) http_proxy <- http_proxy[1L]
+        cf$global$http_proxy <- http_proxy
     }
-    stopifnot(is.character(cf$global$http_proxy))
     if (!missing(http_proxy_user)) {
-        cf$global$http_proxy_user=http_proxy_user
+        assert_that(is.string(http_proxy_user))
+        if (!isTRUE(validate_that(is.scalar(http_proxy_user)))) http_proxy_user <- http_proxy_user[1L]
+        cf$global$http_proxy_user <- http_proxy_user
     }
-    stopifnot(is.character(cf$global$http_proxy_user))
     if (!missing(ftp_proxy)) {
-        cf$global$ftp_proxy=ftp_proxy
+        assert_that(is.string(ftp_proxy))
+        if (!isTRUE(validate_that(is.scalar(ftp_proxy)))) ftp_proxy <- ftp_proxy[1L]
+        cf$global$ftp_proxy <- ftp_proxy
     }
-    stopifnot(is.character(cf$global$ftp_proxy))
     if (!missing(ftp_proxy_user)) {
-        cf$global$ftp_proxy_user=ftp_proxy_user
+        assert_that(is.string(ftp_proxy_user))
+        if (!isTRUE(validate_that(is.scalar(ftp_proxy_user)))) ftp_proxy_user <- ftp_proxy_user[1L]
+        cf$global$ftp_proxy_user <- ftp_proxy_user
     }
-    stopifnot(is.character(cf$global$ftp_proxy_user))
+    ## must be TRUE or FALSE, scalar
     if (!missing(skip_downloads)) {
-        cf$global$skip_downloads=skip_downloads
+        assert_that(is.flag(skip_downloads))
+        cf$global$skip_downloads <- skip_downloads
     }
-    stopifnot(is.logical(cf$global$skip_downloads) && length(cf$global$skip_downloads) == 1L)
+    ## must be 0, 1, or 2
     if (!missing(clobber)) {
-        cf$global$clobber=clobber
+        if (!isTRUE(validate_that(is.scalar(clobber)))) clobber <- clobber[1L]
+        if (!clobber %in% c(0, 1, 2)) stop("clobber must be 0, 1, or 2, but input value is: ", clobber)
+        cf$global$clobber <-  clobber
     }
-    stopifnot(cf$global$clobber %in% c(0,1,2))
+    ## must be >= 0
     if (!missing(wait)) {
-        cf$global$wait=wait
+        if (!isTRUE(validate_that(is.scalar(wait)))) wait <- wait[1L]
+        if (! wait > 0)  stop("wait must be >= 0, but input value is: ", wait)
+        cf$global$clobber <-  clobber
     }
-    stopifnot(is.na(cf$global$wait) || cf$global$wait>=0)
-    ## make sure that we have all the expected fields populated with non-NULL
-    check_fields=c("wget_flags","http_proxy","http_proxy_user","ftp_proxy","ftp_proxy_user","local_file_root")
-    for (fi in check_fields) {
-        if (is.null(cf$global[fi])) {
-            cf$global[fi]=""
-        }
-    }
-    if (is.null(cf$global$clobber)) {
-        cf$global$clobber=0
-    }
-    if (is.null(cf$global$wait)) {
-        cf$global$wait=5
-    }
-    if (is.null(cf$global$skip_downloads)) {
-        cf$global$skip_downloads=FALSE
-    }
+    ## here should we check NAs and replace, or fail?
+    nas <- sapply(as.list(cf$global[1,]), is.na)
+    if (any(nas)) stop("these fields are NA: ", paste(names(nas)[nas], collapse = ";"))
     cf
 }
 
