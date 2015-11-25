@@ -1,6 +1,9 @@
 repomania
 =========================================
 
+**NOTE** Deprecated by https://github.com/AustralianAntarcticDataCentre/raadsync
+
+
 *NOTE* This is a placeholder for some future development. 
 
 This package contains a stripped down version of an access system for a file repository of time-series gridded data. There is one basic read function, with a hardcoded data object (`catalog`) of files that are available. 
